@@ -75,6 +75,7 @@ LitColorTextureProgram::LitColorTextureProgram() {
 		"uniform vec3 LIGHT_DIRECTION;\n"
 		"uniform vec3 LIGHT_ENERGY;\n"
 		"uniform float LIGHT_CUTOFF;\n"
+		"uniform vec3 CAMERA_POSITION;\n"
 		"in vec3 position;\n"
 		"in vec3 normal;\n"
 		"in vec4 color;\n"
@@ -85,9 +86,9 @@ LitColorTextureProgram::LitColorTextureProgram() {
 		"	vec3 e;\n"
 		"	if (LIGHT_TYPE == 0) { //point light \n"
 		"		vec3 l = (LIGHT_LOCATION - position);\n"
-		"		float dis2 = dot(l,l);\n"
+		"		float dis2 = max(25, dot(l,l));\n"
 		"		l = normalize(l);\n"
-		"		float nl = max(0.0, dot(n, l)) / max(1.0, dis2);\n"
+		"		float nl = max(0.0, dot(n, l)) / dis2;\n"
 		"		e = nl * LIGHT_ENERGY;\n"
 		"	} else if (LIGHT_TYPE == 1) { //hemi light \n"
 		"		e = (dot(n,-LIGHT_DIRECTION) * 0.5 + 0.5) * LIGHT_ENERGY;\n"
@@ -103,7 +104,8 @@ LitColorTextureProgram::LitColorTextureProgram() {
 		"		e = max(0.0, dot(n,-LIGHT_DIRECTION)) * LIGHT_ENERGY;\n"
 		"	}\n"
 		"	vec4 albedo = texture(TEX, texCoord) * color;\n"
-		"	fragColor = vec4(e*albedo.rgb, albedo.a);\n"
+		"	float d = max(0.0, dot(CAMERA_POSITION - position, CAMERA_POSITION - position));\n"
+		"	fragColor = max(vec4(albedo.rgb * e, albedo.a), vec4(sin(d/20.f), cos(d/15.f), sin(d/10.f), 1));\n"
 		"}\n"
 	);
 	//As you can see above, adjacent strings in C/C++ are concatenated.
@@ -128,6 +130,7 @@ LitColorTextureProgram::LitColorTextureProgram() {
 
 
 	GLuint TEX_sampler2D = glGetUniformLocation(program, "TEX");
+	CAMERA_POSITION_vec3 = glGetUniformLocation(program, "CAMERA_POSITION");
 
 	//set TEX to always refer to texture binding zero:
 	glUseProgram(program); //bind program -- glUniform* calls refer to this program now
